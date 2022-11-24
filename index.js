@@ -17,9 +17,14 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run(){
 
     try{
+        const productsCollection = client.db("timekeeper").collection("products")
 
-
-        
+        app.get('/categoris/:name', async(req, res)=>{
+            const name = req.params.name;
+            const query = {category : name}
+            const result = await productsCollection.find(query).toArray()
+            res.send(result)
+        })
 
 
     }
