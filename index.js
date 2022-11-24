@@ -18,6 +18,8 @@ async function run(){
 
     try{
         const productsCollection = client.db("timekeeper").collection("products")
+        const bookedproductCollection = client.db("timekeeper").collection("bookedProduct")
+
 
         app.get('/categoris/:name', async(req, res)=>{
             const name = req.params.name;
@@ -26,6 +28,11 @@ async function run(){
             res.send(result)
         })
 
+        app.post('/bookedproduct', async(req, res)=>{
+            const product = req.body;
+            const result = await bookedproductCollection.insertOne(product)
+            res.send(result)
+        })
 
     }
     finally{
