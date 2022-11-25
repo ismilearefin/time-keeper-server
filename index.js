@@ -46,9 +46,6 @@ async function run(){
             res.send(result)
         })
         
-        
-        
-        
 // My Order (load products from database)
         app.get('/allproducts', async(req, res)=>{
             const email = req.query.email;
@@ -58,6 +55,13 @@ async function run(){
             };
             const result = await productsCollection.find(query).toArray()
             res.send(result)
+        })
+
+        app.get('/users', async(req, res)=>{
+            const email = req.query.email;
+            const query = {email : email};
+            const allusers = await usersCollection.find(query).toArray()
+            res.send(allusers)
         })
 
 
