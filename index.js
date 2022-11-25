@@ -28,6 +28,13 @@ async function run(){
             const result = await productsCollection.find(query).toArray()
             res.send(result)
         })
+        // load product for advertise
+        app.get('/allproducts/advertise', async(req, res)=>{
+            const query = {}
+            const result = await productsCollection.find(query).toArray()
+            const remaning = result.filter(data => !data?.status)
+            res.send(remaning)
+        })
 
 // My Product ( query by email)
         app.get('/allproducts/myproducts',async (req, res)=>{
