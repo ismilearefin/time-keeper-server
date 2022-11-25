@@ -89,6 +89,18 @@ async function run(){
             res.send(result)
         })
 
+        app.put('/allproducts/:email', async(req, res)=>{
+            const email = req.params.email;
+            const filter = { email : email};
+            const option = {upsert : true};
+            const updatedDoc = {
+                $set: {
+                    user_status : 'verified'
+                }
+            }
+            const result = await productsCollection.updateMany(filter, updatedDoc, option);
+            res.send(result)
+        })
         // app.put('/users/:id', async(req, res)=>{
         //     const id = req.params.id
         //     const filter = {
