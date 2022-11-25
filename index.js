@@ -50,6 +50,19 @@ async function run(){
         })
 
 
+        app.get('/users/allseller', async(req, res)=>{
+            const query = {userRole : "Seller"};
+            const allseller = await usersCollection.find(query).toArray()
+            res.send(allseller)
+        })
+        app.get('/users/allbuyer', async(req, res)=>{
+            const query = {userRole : "Buyer"};
+            const allseller = await usersCollection.find(query).toArray()
+            res.send(allseller)
+        })
+
+
+
         app.post('/users', async(req, res)=>{
             const user = req.body;
             const result = await usersCollection.insertOne(user);
@@ -88,6 +101,13 @@ async function run(){
                 return res.send({acknowledged : false})
             }
             const result = await bookedproductCollection.insertOne(product)
+            res.send(result)
+        })
+
+        app.delete('/users/:id', async(req, res)=>{
+            const id = req.params.id;
+            const query = {_id : ObjectId(id)}
+            const result = await usersCollection.deleteOne(query);
             res.send(result)
         })
 
