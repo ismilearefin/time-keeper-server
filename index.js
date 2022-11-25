@@ -30,9 +30,11 @@ async function run(){
         })
 
 // My Product ( query by email)
-        app.get('/myproducts',async (req, res)=>{
+        app.get('/allproducts/myproducts',async (req, res)=>{
             const email = req.query.email;
-            const query = {email : email};
+            const query = {
+                email : email
+            };
             const result = await productsCollection.find(query).toArray()
             res.send(result)
         })
@@ -114,7 +116,22 @@ async function run(){
             const result = await productsCollection.updateOne(filter, updatedProduct,option);
             res.send(result)
         })
-        
+        //// update product with advertise mood
+        app.put('/allproducts/advertise/:id', async(req, res)=>{
+            const id = req.params.id;
+            const filter = { _id : ObjectId(id)};
+            const option = {upsert : true};
+            const updatedDoc = {
+                $set: {
+                    advertise : 'ON'
+                }
+            }
+            const result = await productsCollection.updateOne(filter, updatedDoc, option);
+            res.send(result)
+        })
+
+
+
 ///////////////////////////////////////////////////////////
         app.post('/allproducts',async(req, res)=>{
             const product = req.body;
@@ -132,6 +149,12 @@ async function run(){
                 return res.send({acknowledged : false})
             }
             const result = await bookedproductCollection.insertOne(product)
+            res.send(result)
+        })
+        app.delete('/allproducts/:id', async(req, res)=>{
+            const id = req.params.id;
+            const query = {_id : ObjectId(id)}
+            const result = await productsCollection.deleteOne(query);
             res.send(result)
         })
 
