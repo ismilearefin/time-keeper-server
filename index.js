@@ -1,5 +1,5 @@
 const express = require('express');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors');
 const { query } = require('express');
 const app = express();
@@ -20,6 +20,7 @@ async function run(){
     try{
         const productsCollection = client.db("timekeeper").collection("products")
         const bookedproductCollection = client.db("timekeeper").collection("bookedProduct")
+        const usersCollection = client.db("timekeeper").collection("users")
 
 
         app.get('/categoris/:name', async(req, res)=>{
@@ -49,6 +50,28 @@ async function run(){
         })
 
 
+        app.post('/users', async(req, res)=>{
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            res.send(result)
+        })
+
+        // app.put('/users/:id', async(req, res)=>{
+        //     const id = req.params.id
+        //     const filter = {
+        //         _id : ObjectId(id),
+        //         email : "ismilearefin@gmail.com"
+        //     };
+        //     const options = {upsert : true};
+        //     const updateDoc = {
+        //         $set : {
+        //             userRole : 'Admin'
+        //         }
+        //     }
+        //     const result = await usersCollection.updateOne(filter, updateDoc, options);
+        //     res.send(result)
+        // })
+
         app.post('/allproducts',async(req, res)=>{
             const product = req.body;
             const result = await productsCollection.insertOne(product);
@@ -58,6 +81,12 @@ async function run(){
 
         app.post('/bookedproduct', async(req, res)=>{
             const product = req.body;
+            console.log(product);
+            const query = {_id : product._id}
+            const alreadybooked = await bookedproductCollection.find(query).toArray()
+            if(alreadybooked.length){
+                return res.send({acknowledged : false})
+            }
             const result = await bookedproductCollection.insertOne(product)
             res.send(result)
         })
