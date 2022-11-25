@@ -19,7 +19,6 @@ async function run(){
 
     try{
         const productsCollection = client.db("timekeeper").collection("products")
-        const bookedproductCollection = client.db("timekeeper").collection("bookedProduct")
         const usersCollection = client.db("timekeeper").collection("users")
 
 
@@ -84,7 +83,31 @@ async function run(){
         //     const result = await usersCollection.updateOne(filter, updateDoc, options);
         //     res.send(result)
         // })
-
+    ////////update product with Booked info    ///////////////////////////////////////////////////////////
+        app.put('/allproducts/:id', async(req, res)=>{
+            const id = req.params.id;
+            const orderInfo = req.body;
+            const query = {}
+            const alreadybooked = await productsCollection.find(query).toArray()
+            console.log(alreadybooked)
+            const isbooked = alreadybooked.find((data)=> data.status === 'booked')
+            if(isbooked){
+                return res.send({acknowledged : false})
+            }
+            const filter = {_id : ObjectId(id)};
+            const option = {upsert : true};
+            const updatedProduct = {
+                $set : {
+                    status : 'booked',
+                    user_num : orderInfo.number,
+                    meeting_location : orderInfo.location
+                }
+            }
+            const result = await productsCollection.updateOne(filter, updatedProduct,option);
+            res.send(result)
+        })
+        
+///////////////////////////////////////////////////////////
         app.post('/allproducts',async(req, res)=>{
             const product = req.body;
             const result = await productsCollection.insertOne(product);
