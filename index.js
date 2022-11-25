@@ -41,10 +41,13 @@ async function run(){
         
         
 // My Order (load products from database)
-        app.get('/bookedproduct', async(req, res)=>{
+        app.get('/allproducts', async(req, res)=>{
             const email = req.query.email;
-            const query = {email : email};
-            const result = await bookedproductCollection.find(query).toArray()
+            const query = {
+                status : 'booked',
+                user_email : email,
+            };
+            const result = await productsCollection.find(query).toArray()
             res.send(result)
         })
 
@@ -64,6 +67,11 @@ async function run(){
 
         app.post('/users', async(req, res)=>{
             const user = req.body;
+            const query = {email : user.email};
+            const userInfo = await usersCollection.find(query).toArray();
+            if(userInfo.length){
+                return res.send({message : 'already have this mail'})
+            }
             const result = await usersCollection.insertOne(user);
             res.send(result)
         })
@@ -89,9 +97,8 @@ async function run(){
             const orderInfo = req.body;
             const query = {}
             const alreadybooked = await productsCollection.find(query).toArray()
-            console.log(alreadybooked)
-            const isbooked = alreadybooked.find((data)=> data.status === 'booked')
-            if(isbooked){
+            const isbooked = alreadybooked.find((data)=> data.status)
+            if(isbooked.length){
                 return res.send({acknowledged : false})
             }
             const filter = {_id : ObjectId(id)};
@@ -99,6 +106,7 @@ async function run(){
             const updatedProduct = {
                 $set : {
                     status : 'booked',
+                    user_email : orderInfo.email,
                     user_num : orderInfo.number,
                     meeting_location : orderInfo.location
                 }
