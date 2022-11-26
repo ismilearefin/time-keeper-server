@@ -62,6 +62,14 @@ async function run(){
             const result = await productsCollection.find(query).toArray()
             res.send(result)
         })
+// reported Items
+        app.get('/allproducts/report', async(req, res)=>{
+            const query = {
+                product_status : 'reported'
+            }
+            const result = await productsCollection.find(query).toArray()
+            res.send(result)
+        })
 
         app.get('/users', async(req, res)=>{
             const email = req.query.email;
@@ -170,6 +178,19 @@ async function run(){
             const updatedDoc = {
                 $set: {
                     advertise : 'ON'
+                }
+            }
+            const result = await productsCollection.updateOne(filter, updatedDoc, option);
+            res.send(result)
+        })
+
+        app.put('/allproducts/report/:id', async(req, res)=>{
+            const id = req.params.id;
+            const filter = {_id : ObjectId(id)};
+            const option = {upsert : true};
+            const updatedDoc = {
+                $set: {
+                    product_status : 'reported'
                 }
             }
             const result = await productsCollection.updateOne(filter, updatedDoc, option);
