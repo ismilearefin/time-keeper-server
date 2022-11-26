@@ -53,11 +53,11 @@ async function run(){
         })
         
 // My Order (load products from database)
-        app.get('/allproducts', async(req, res)=>{
+        app.get('/allproducts/order', async(req, res)=>{
             const email = req.query.email;
             const query = {
                 status : 'booked',
-                user_email : email,
+                buyer_email : email,
             };
             const result = await productsCollection.find(query).toArray()
             res.send(result)
@@ -95,7 +95,13 @@ async function run(){
             res.send(result)
         })
 
-        app.put('/allproducts/:email', async(req, res)=>{
+        app.post('/allproducts',async(req, res)=>{
+            const product = req.body;
+            const result = await productsCollection.insertOne(product);
+            res.send(result)
+        })
+/// products verify update...................
+        app.put('/allproducts/verify/:email', async(req, res)=>{
             const email = req.params.email;
             const filter = { email : email};
             const option = {upsert : true};
@@ -122,23 +128,34 @@ async function run(){
         //     const result = await usersCollection.updateOne(filter, updateDoc, options);
         //     res.send(result)
         // })
+
+        app.get('/allproducts', async(req, res)=> {
+            const query ={}
+            const result = await productsCollection.find(query).toArray()
+            res.send(result)
+        })
+
     ////////update product with Booked info    ///////////////////////////////////////////////////////////
-        app.put('/allproducts/:id', async(req, res)=>{
+        app.put('/allproducts/booked/:id', async(req, res)=>{
             const id = req.params.id;
             const orderInfo = req.body;
-            const query = {}
+            // console.log(orderInfo)
+            const query = {
+                _id : ObjectId(id)
+            }
             const alreadybooked = await productsCollection.find(query).toArray()
-            const isbooked = alreadybooked.find((data)=> data.status)
-            if(isbooked.length){
+            const isbooked = alreadybooked.find((data)=> data?.status)
+            // console.log(isbooked)
+            if(isbooked){
                 return res.send({acknowledged : false})
             }
-            const filter = {_id : ObjectId(id)};
-            const option = {upsert : true};
+            const filter = { _id : ObjectId(id) };
+            const option = { upsert : true };
             const updatedProduct = {
                 $set : {
-                    status : 'booked',
-                    user_email : orderInfo.email,
-                    user_num : orderInfo.number,
+                    status :'booked',
+                    buyer_email : orderInfo.buyer_email,
+                    buyer_num : orderInfo.number,
                     meeting_location : orderInfo.location
                 }
             }
@@ -162,24 +179,20 @@ async function run(){
 
 
 ///////////////////////////////////////////////////////////
-        app.post('/allproducts',async(req, res)=>{
-            const product = req.body;
-            const result = await productsCollection.insertOne(product);
-            res.send(result)
-        })
+       
 
 
-        app.post('/bookedproduct', async(req, res)=>{
-            const product = req.body;
-            console.log(product);
-            const query = {_id : product._id}
-            const alreadybooked = await bookedproductCollection.find(query).toArray()
-            if(alreadybooked.length){
-                return res.send({acknowledged : false})
-            }
-            const result = await bookedproductCollection.insertOne(product)
-            res.send(result)
-        })
+        // app.post('/bookedproduct', async(req, res)=>{
+        //     const product = req.body;
+        //     console.log(product);
+        //     const query = {_id : product._id}
+        //     const alreadybooked = await bookedproductCollection.find(query).toArray()
+        //     if(alreadybooked.length){
+        //         return res.send({acknowledged : false})
+        //     }
+        //     const result = await bookedproductCollection.insertOne(product)
+        //     res.send(result)
+        // })
         app.delete('/allproducts/:id', async(req, res)=>{
             const id = req.params.id;
             const query = {_id : ObjectId(id)}
