@@ -38,7 +38,7 @@ async function run(){
         app.get('/allproducts/advertise', async(req, res)=>{
             const query = {}
             const result = await productsCollection.find(query).toArray()
-            const remaning = result.filter(data => !data?.status)
+            const remaning = result.filter(data => data?.advertise)
             res.send(remaning)
         })
 
