@@ -6,6 +6,9 @@ const app = express();
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
+const stripe = require("stripe")(process.env.STRIPE_SECRECT);
+
+
 
 // Middleware..
 app.use(cors())
@@ -15,7 +18,7 @@ app.use(express.json());
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster2.y3njyog.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
-//// JWT verify middleware
+// JWT verify middleware
 
 // function verifyJWT(req, res, next){
 //     const authHeader = req.headers.authorization
@@ -38,9 +41,10 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run(){
 
     try{
-        const categoryCollection = client.db("timekeeper").collection("category")
-        const productsCollection = client.db("timekeeper").collection("products")
-        const usersCollection = client.db("timekeeper").collection("users")
+        const categoryCollection = client.db("timekeeper").collection("category");
+        const productsCollection = client.db("timekeeper").collection("products");
+        const usersCollection = client.db("timekeeper").collection("users");
+        const paymentCollection = client.db("timekeeper").collection("payments");
 
         app.get('/categoris', async(req, res)=>{
             const query = {}
@@ -54,7 +58,7 @@ async function run(){
             const result = await productsCollection.find(query).toArray()
             res.send(result)
         })
-        // load product for advertise
+// load product for advertise
         app.get('/allproducts/advertise', async(req, res)=>{
             const query = {}
             const result = await productsCollection.find(query).toArray()
@@ -62,8 +66,8 @@ async function run(){
             res.send(remaning)
         })
 
-// My Product ( query by email)
-        app.get('/allproducts/myproducts', async (req, res)=>{
+// My Product ( query by email) , verifyJWT
+        app.get('/allproducts/myproducts',async (req, res)=>{
             const email = req.query.email;
             // const decodedEmail = req.decoded.email;
             // if(email  !==  decodedEmail){
@@ -98,6 +102,15 @@ async function run(){
             const result = await productsCollection.find(query).toArray()
             res.send(result)
         })
+// for payment ...
+        app.get('/allproducts/payment/:id',async(req, res)=>{
+            const id = req.params.id;
+            const query = { _id: ObjectId(id)};
+            const product = await productsCollection.findOne(query);
+            res.send(product)
+        })
+
+
 // get all user for conditional menu bar
         app.get('/users',async(req, res)=>{
             const email = req.query.email;
@@ -122,6 +135,43 @@ async function run(){
             const allseller = await usersCollection.find(query).toArray()
             res.send(allseller)
         })
+
+//payment info save in DB.....
+        app.post('/create-payment-intent', async(req,res)=>{
+            const data = req.body;
+            const price = data.resale_price;
+            const amount = price*100
+            const paymentIntent = await stripe.paymentIntents.create({
+                
+                currency: "usd",
+                amount: amount,
+                "payment_method_types" : [
+                    "card"
+                ]
+                });
+                
+                res.send({
+                    clientSecret: paymentIntent.client_secret,
+                });
+            });
+        
+        app.post('/payments', async(req, res)=>{
+            const payment = req.body;
+            const result = await paymentCollection.insertOne(payment);
+            const id = payment.paymentId
+            const filter = {_id : ObjectId(id)}
+            const updatedDoc = {
+                $set:{
+                    paid : true,
+                    transactionId : payment.transactionId
+                }
+            }
+            const updateResult = await productsCollection.updateOne(filter,updatedDoc)
+            res.send(result)
+        })    
+
+
+
 // JWT token verify with email
         app.get('/jwt', async(req, res)=> {
             const email = req.query.email;
@@ -133,6 +183,8 @@ async function run(){
             }
             res.status(403).send({accessToken: ''})
         })
+
+
 
         app.post('/users', async(req, res)=>{
             const user = req.body;
@@ -227,7 +279,6 @@ async function run(){
 
 
 ///////////////////////////////////////////////////////////
-       
         app.delete('/allproducts/:id', async(req, res)=>{
             const id = req.params.id;
             const query = {_id : ObjectId(id)}
