@@ -1,8 +1,9 @@
 const express = require('express');
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors');
-const { query } = require('express');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+// const { query } = require('express');
 const app = express();
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
 
@@ -13,6 +14,25 @@ app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster2.y3njyog.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+
+//// JWT verify middleware
+
+// function verifyJWT(req, res, next){
+//     const authHeader = req.headers.authorization
+//     if(!authHeader){
+//         res.status(401).send('unauthorizes access');
+//     }
+//     const token = authHeader.split(' ')[1];
+//     jwt.verify(token, process.env.ACCESS_TOKEN, function(err, decoded){
+//         if(err){
+//             return res.status(403).send({message : 'forbidden access'})
+//         }
+//         req.decoded = decoded;
+//         next();
+//     })
+// }
+
+
 
 
 async function run(){
@@ -43,8 +63,12 @@ async function run(){
         })
 
 // My Product ( query by email)
-        app.get('/allproducts/myproducts',async (req, res)=>{
+        app.get('/allproducts/myproducts', async (req, res)=>{
             const email = req.query.email;
+            // const decodedEmail = req.decoded.email;
+            // if(email  !==  decodedEmail){
+            //     return res.status(403).send({message : 'forbidden access'})
+            // }
             const query = {
                 email : email
             };
@@ -53,8 +77,12 @@ async function run(){
         })
         
 // My Order (load products from database)
-        app.get('/allproducts/order', async(req, res)=>{
+        app.get('/allproducts/order',async(req, res)=>{
             const email = req.query.email;
+            // const decodedEmail = req.decoded.email;
+            // if(email  !==  decodedEmail){
+            //     return res.status(403).send({message : 'forbidden access'})
+            // }
             const query = {
                 status : 'booked',
                 buyer_email : email,
@@ -70,27 +98,41 @@ async function run(){
             const result = await productsCollection.find(query).toArray()
             res.send(result)
         })
-
-        app.get('/users', async(req, res)=>{
+// get all user for conditional menu bar
+        app.get('/users',async(req, res)=>{
             const email = req.query.email;
+            // const decodedEmail = req.decoded.email;
+            // if(email  !==  decodedEmail){
+            //     return res.status(403).send({message : 'forbidden access'})
+            // }
             const query = {email : email};
             const allusers = await usersCollection.find(query).toArray()
             res.send(allusers)
         })
 
-
-        app.get('/users/allseller', async(req, res)=>{
+//get all seller info
+        app.get('/users/allseller',async(req, res)=>{
             const query = {userRole : "Seller"};
             const allseller = await usersCollection.find(query).toArray()
             res.send(allseller)
         })
-        app.get('/users/allbuyer', async(req, res)=>{
+//get all buyer info        
+        app.get('/users/allbuyer',async(req, res)=>{
             const query = {userRole : "Buyer"};
             const allseller = await usersCollection.find(query).toArray()
             res.send(allseller)
         })
-
-
+// JWT token verify with email
+        app.get('/jwt', async(req, res)=> {
+            const email = req.query.email;
+            const query = {email : email}
+            const user = await usersCollection.findOne(query);
+            if(user){
+                const token = jwt.sign({email}, process.env.ACCESS_TOKEN, {expiresIn: '10h'})
+                return res.send({accessToken: token});
+            }
+            res.status(403).send({accessToken: ''})
+        })
 
         app.post('/users', async(req, res)=>{
             const user = req.body;
@@ -121,21 +163,6 @@ async function run(){
             const result = await productsCollection.updateMany(filter, updatedDoc, option);
             res.send(result)
         })
-        // app.put('/users/:id', async(req, res)=>{
-        //     const id = req.params.id
-        //     const filter = {
-        //         _id : ObjectId(id),
-        //         email : "ismilearefin@gmail.com"
-        //     };
-        //     const options = {upsert : true};
-        //     const updateDoc = {
-        //         $set : {
-        //             userRole : 'Admin'
-        //         }
-        //     }
-        //     const result = await usersCollection.updateOne(filter, updateDoc, options);
-        //     res.send(result)
-        // })
 
         app.get('/allproducts', async(req, res)=> {
             const query ={}
@@ -201,19 +228,6 @@ async function run(){
 
 ///////////////////////////////////////////////////////////
        
-
-
-        // app.post('/bookedproduct', async(req, res)=>{
-        //     const product = req.body;
-        //     console.log(product);
-        //     const query = {_id : product._id}
-        //     const alreadybooked = await bookedproductCollection.find(query).toArray()
-        //     if(alreadybooked.length){
-        //         return res.send({acknowledged : false})
-        //     }
-        //     const result = await bookedproductCollection.insertOne(product)
-        //     res.send(result)
-        // })
         app.delete('/allproducts/:id', async(req, res)=>{
             const id = req.params.id;
             const query = {_id : ObjectId(id)}
@@ -235,15 +249,6 @@ async function run(){
 
 }
 run().catch((err)=>console.log(err))
-
-
-
-
-
-
-
-
-
 
 
 
