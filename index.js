@@ -62,8 +62,9 @@ async function run(){
         app.get('/allproducts/advertise', async(req, res)=>{
             const query = {}
             const result = await productsCollection.find(query).toArray()
-            const remaning = result.filter(data => data?.advertise)
-            res.send(remaning)
+            const paidProduct = result.filter(product => product?.paid === true)
+            const remaning =  paidProduct.filter(data => data?.advertise)
+            res.send(paidProduct)
         })
 
 // My Product ( query by email) , verifyJWT
