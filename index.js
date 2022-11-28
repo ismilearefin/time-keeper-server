@@ -63,7 +63,9 @@ async function run(){
                 email : email
             };
             const result = await productsCollection.find(query).toArray()
-            res.send(result)
+            const paidProduct = result.filter(product => product?.paid !== true)
+            const remaning = paidProduct.filter(data => data?.advertise);
+            res.send(remaning)
         })
         
 // My Order (load products from database)
