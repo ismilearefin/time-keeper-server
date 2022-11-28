@@ -64,8 +64,7 @@ async function run(){
             };
             const result = await productsCollection.find(query).toArray()
             const paidProduct = result.filter(product => product?.paid !== true)
-            const remaning = paidProduct.filter(data => data?.advertise);
-            res.send(remaning)
+            res.send(paidProduct)
         })
         
 // My Order (load products from database)
